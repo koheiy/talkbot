@@ -50,23 +50,21 @@ public class SampleBot extends Bot {
     @Controller(events = {EventType.DIRECT_MENTION, EventType.DIRECT_MESSAGE})
     public void onReceiveDM(WebSocketSession session, Event event) {
         String input = event.getText().replaceAll("\\<.*\\> ", "");
-        try {
-            reply(new Wiki(wikiUrl).getTextExtract(input), event.getChannelId());
-        } catch (Exception e) {
-            reply(sendChatBotRequest(input), event.getChannelId());
-        }
+        Wiki wiki = new Wiki(wikiUrl);
+        reply(wiki.exists(input) ? wiki.getTextExtract(input) : sendChatBotRequest(input), event.getChannelId());
     }
 
-    private String sendChatBotRequest(String query) {
+    private String sendChatBotRequest(String input) {
         try {
             RestTemplate restTemplate = new RestTemplate();
             MultiValueMap<String, String> entity = new LinkedMultiValueMap<>();
             entity.add("apikey", talkApiKey);
-            entity.add("query", query);
+            entity.add("query", input);
             ResponseEntity<ChatResponse> result = restTemplate.postForEntity(talkapi, entity, ChatResponse.class);
             return result.getBody().getResults().get(0).getReply();
         } catch (Exception e) {
-            throw e;
+            e.printStackTrace();
+            return "I'm sorry. I don't know.";
         }
     }
 
